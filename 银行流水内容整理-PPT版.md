@@ -113,9 +113,9 @@
 
 ## 1.3 第三页：AI 在整个流程中的应用
 
-银行流水进入系统后，依次经过 7 个分类引擎。每个引擎专注一种交易语义，输出交易类别、交易对手和分类依据；后续引擎如发现更明确证据可修正前序分类，最终以最匹配业务语义的分类为准。
+银行流水进入系统后，依次经过多个分类引擎处理。核心的 Init、Income、Liability 引擎专注主要交易语义，配套 Dishonour、Transfer、Fee 等辅助引擎及赌博、房租等专项支出识别覆盖细分场景。每个引擎专注一种交易语义，输出交易类别、交易对手和分类依据；后续引擎如发现更明确证据可修正前序分类，最终以最匹配业务语义的分类为准。
 
-**引擎流程**：Init → Dishonour → Transfer → Income → Liability → All Other Credit → Fee → 质量评估与优化闭环
+**引擎流程**：Init → Dishonour → Transfer → Income → Liability → Fee → 质量评估与优化闭环
 
 ### 1. Init Engine：已知商户和消费分类
 
@@ -131,24 +131,19 @@
 
 **商户知识库沉淀示例**
 
-| 原始交易描述                                            | 标准商户               | 关键词／别名                             | 类别             |
-| ------------------------------------------------------- | ---------------------- | ---------------------------------------- | ---------------- |
-| MCDONALDS BRISBANE                                      | McDonald's             | MCDONALDS、MCDONALD'S                    | Dining Out       |
-| CHEMIST WAREHOUSE 123                                   | Chemist Warehouse      | CHEMIST WAREHOUSE                        | Health           |
-| AMZNPRIMEA*、AMZNPRIMEAU                                | Amazon Prime           | AMZNPRIMEA*、AMZNPRIMEAU                 | Subscription TV  |
-| BPMORANBAHCOLLIERY                                      | BP Moranbah Colliery   | BPMORANBAHCOLLIERY、BP Moranbah Colliery | Automotive       |
-| EFTPOS DEBIT 20NOV LMF GAMES & AMUSEMENTS NORTHMEAD NSW | LMF Games & Amusements | LMF GAMES & AMUSEMENTS                   | Entertainment    |
-| OPENAI *CHATGPT                                         | OpenAI                 | OPENAI *CHATGPT、OpenAI                  | Information      |
+| 原始交易描述                                              | 标准商户  | 关键词／别名            | 类别             |
+| --------------------------------------------------------- | --------- | ----------------------- | ---------------- |
+| `EFTPOS DEBIT 06AUG TEMU.COM MELBOURNE VIC`               | Temu      | TEMU.COM、TEMU          | Online Shopping  |
+| `TAP & GO UBER *TRIP SYDNEY NSW AUS`                      | Uber      | UBER *TRIP、UBER        | Transport        |
+| `UBER EATS *MCDONALDS 03AUG MELBOURNE VIC`                | Uber Eats | UBER EATS               | Dining Out       |
+| `NETFLIX.COM 12.99AUD 14JUL MELB AUS`                     | Netflix   | NETFLIX.COM、NETFLIX    | Subscription TV  |
+| `EFTPOS SPOTIFY PTE LTD 22JUL SYDNEY NSW`                 | Spotify   | SPOTIFY                 | Entertainment    |
+| `OPENAI *CHATGPT 20USD 04AUG SYDNEY NSW`                  | OpenAI    | OPENAI *CHATGPT、OpenAI | Information      |
 
 AI 只提取交易文本中实际出现的关键词，不凭空生成；并通过联网核验标准名和类别，避免过宽关键词造成误匹配。
 
 
-### 2. Transfer Engine：区分资金搬运与真实收支
-
-- **职责**：识别内部／外部转账，避免把账户间资金搬运误分类为消费、收入或负债；
-- **机制**：综合转账文本、交易对手、交易方向和排除规则判断；AI 不直接参与实时判断，质检发现房租、保险、水电被误归为转账时，由 AI 审计给出规则优化建议。
-
-### 3. Income Engine：识别工资和其他稳定收入
+### 2. Income Engine：识别工资和其他稳定收入
 
 - **职责**：识别工资、薪酬包装、政府补助和零工收入；
 - **机制**：综合交易方向、金额、付款方重复次数、金额稳定性及周／双周／月规律周期判断；只有"入账方向 + 文本／行为证据"共同成立才归为收入。
@@ -165,7 +160,7 @@ AI 只提取交易文本中实际出现的关键词，不凭空生成；并通�
 
 Income 不只依赖"工资"两个字，而是结合付款方历史、金额和周期识别稳定收入。
 
-### 4. Liability Engine：识别贷款、信用卡和催收  AI 建设与自动维护
+### 3. Liability Engine：识别贷款、信用卡和催收  AI 建设与自动维护
 
 - **职责**：处理 BNPL、工资预支、信用卡还款、个人贷款、房贷、车贷、催收、债务整合、透支、退票等负债交易；
 - **机制**：先识别交易对手和产品类型，再将同类还款归集为负债流；知识库覆盖主要贷款机构、BNPL 平台、信用卡还款模式、催收机构及特殊业务规则；
@@ -186,6 +181,17 @@ Income 不只依赖"工资"两个字，而是结合付款方历史、金额和�
 | 通用贷款兜底   | 未命中具体机构，含完整`LOAN` | 专项规则均未命中后的兜底                 | 交易对手：Generic Loans；类别：Non SACC Loans   |
 
 
+
+### 4. Other Engine：其他语义引擎
+
+除三个主引擎外，系统还配备 Dishonour、Transfer、Fee 等辅助引擎，并支持赌博、房租等专项支出识别，覆盖更细分的交易语义：
+
+- **Dishonour Engine**：识别退票、撤销和失败扣款，标记为退票类交易；
+- **Transfer Engine**：识别内部／外部转账，避免资金搬运被误分类为消费、收入或负债；
+- **赌博、房租识别**：识别赌博、房租等专项支出，与日常消费交易区分；
+- **Fee Engine**：识别 ATM 费用、账户费用、国际交易费用等银行费用。
+
+辅助引擎使用明确的交易文本规则，不需要实时 AI 判断；质量评估发现新的交易描述时，可补充为新的识别规则。
 
 ### 5. 评估闭环：AI 质检 Agent 监控分类波动并输出诊断报告
 
