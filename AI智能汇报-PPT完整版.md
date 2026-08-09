@@ -538,23 +538,43 @@ AI 不参与实时分类，而是在分类完成后，以历史分类结果和�
 
 **典型案例：覆盖 → 一致性 → 精度**
 
-**Case 1：覆盖优势——Home Loan 被 illion 漏识别**
+> 说明：以下为模拟银行流水示意（非真实逐笔记录），金额、笔数与标签矛盾点均与真实结论保持一致，用于直观展示同一笔流水在 illion 与我方之间的识别差异。
 
-- **问题**：`Home loan - Receipt ... To Orange Everyday` 被 illion 标为 Internal Transfer，住房贷款完全遗漏；
-- **我方逻辑**：基于 `Home loan` 产品关键词判定为贷款，细分为 Non-SACC Loans（Home Loan）；
-- **价值**：产品词库捕捉 illion 覆盖盲区，扩大贷款识别面。
+**Case 1：覆盖——Home Loan 被 illion 漏识别**
 
-**Case 2：分类一致性——同一贷款流内 illion 标签自相矛盾（MoneySpot）**
+| 日期 | 金额 | 方向 | 交易描述 | illion 分类 | 我方分类 |
+| --- | --- | --- | --- | --- | --- |
+| 2026/07/05 | A$1,248.00 | Debit | `Home loan - Receipt ... To Orange Everyday` | Internal Transfer（内部转账）<br>住房贷款完全遗漏 | Non-SACC Loans（Home Loan）<br>按产品关键词判定为贷款 |
 
-- **问题**：放款 750 澳元，等额还款 49.09 澳元 × 10；illion 前 6 笔标 SACC、后 5 笔标 Non-SACC；
-- **我方逻辑**：放款与还款贷款流匹配识别为单一贷款流；依据小额、等额、高频率特征及机构类型统一判定为 SACC Loans；
-- **价值**：贷款流粒度分类一致，纠正 illion 的碎片化误判。
+> 价值：产品词库捕捉 illion 覆盖盲区，扩大贷款识别面。
 
-**Case 3：分类精度——LOC 产品被 illion 泛化为 SACC（Credit24）**
+**Case 2：一致性——同一贷款流内 illion 标签自相矛盾（MoneySpot）**
 
-- **问题**：同一用户 19 笔 Credit24 交易，illion 全部标为 SACC Loans；
-- **我方逻辑**：结合交易模式与机构产品库识别为循环授信（LOC），归入 Non-SACC Loans（LOC 与 SACC 在监管属性、利率上限上有本质区别）；
-- **价值**：细粒度产品区分，避免非 SACC 产品误判为高风险 SACC，为风控提供更准确信号。
+同一贷款流共 11 笔：放款 1 笔（750 澳元）+ 等额还款 10 笔（49.09 澳元/期），以下展示代表性笔次。
+
+| 日期 | 金额 | 方向 | 交易描述 | illion 分类 | 我方分类 |
+| --- | --- | --- | --- | --- | --- |
+| 2026/03/02 | A$750.00 | Credit | `MoneySpot Loan Disbursement` | SACC Loans | SACC Loans |
+| 2026/03/16 | A$49.09 | Debit | `MoneySpot Repayment` | SACC Loans | SACC Loans |
+| 2026/05/11 | A$49.09 | Debit | `MoneySpot Repayment` | SACC Loans | SACC Loans |
+| 2026/05/25 | A$49.09 | Debit | `MoneySpot Repayment` | Non-SACC Loans | SACC Loans |
+| 2026/07/20 | A$49.09 | Debit | `MoneySpot Repayment` | Non-SACC Loans | SACC Loans |
+
+> 完整 11 笔中，illion 前 6 笔标 SACC、后 5 笔标 Non-SACC，同一贷款流内标签自相矛盾；我方将放款与还款匹配为单一贷款流，依据小额、等额、高频特征及机构类型统一判定为 SACC Loans。
+> 价值：贷款流粒度分类一致，纠正 illion 的碎片化误判。
+
+**Case 3：精度——LOC 产品被 illion 泛化为 SACC（Credit24）**
+
+同一用户共 19 笔 Credit24 交易，全部被 illion 标为 SACC Loans，以下展示代表性笔次。
+
+| 日期 | 金额 | 方向 | 交易描述 | illion 分类 | 我方分类 |
+| --- | --- | --- | --- | --- | --- |
+| 2026/02/10 | A$300.00 | Credit | `Credit24 Loan Advance` | SACC Loans | Non-SACC Loans（LOC 循环授信） |
+| 2026/04/14 | A$48.30 | Debit | `Credit24 Repayment` | SACC Loans | Non-SACC Loans（LOC 循环授信） |
+| 2026/06/22 | A$48.30 | Debit | `Credit24 Repayment` | SACC Loans | Non-SACC Loans（LOC 循环授信） |
+
+> 完整 19 笔中，illion 全部标为 SACC Loans，忽略产品类型差异；我方结合交易模式与机构产品库识别为循环授信（LOC），归入 Non-SACC Loans（LOC 在监管属性、利率上限上与 SACC 有本质区别）。
+> 价值：细粒度产品区分，避免非 SACC 产品误判为高风险 SACC，为风控提供更准确信号。
 
 ---
 
