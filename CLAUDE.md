@@ -2,9 +2,9 @@
 
 ## 一、项目概述
 
-- 本仓库用于制作 AI 智能汇报 PPT 材料（银行流水识别产品、变量开发 Agent、APP List 与短信挖掘），核心文件为 `AI智能汇报-PPT完整版.md`，全篇 18 页、无封面页。
+- 本仓库用于制作 AI 智能汇报 PPT 材料（银行流水识别产品、变量开发 Agent、APP List 与短信挖掘），核心文件为 `内容素材/AI智能汇报-PPT完整版.md`，全篇 18 页、无封面页。
 - 汇报围绕自主交易分类系统展开，系统由 7 个分类引擎组成：Init、Dishonour、Transfer、Income、Liability、All Other Credit、Fee。引擎将银行原始流水加工为结构化交易数据，支持收入识别、负债识别和 Serviceability 计算，并配套 AI 质检闭环及商户知识库。业务细节以主文件内容为准，不在本文件中重复。
-- 素材图片位于 `Images_attachments/`，功能截图按正文引用位置对应。
+- 素材图片位于 `Images_attachments/`，功能截图按正文引用位置对应（该目录当前不存在，如素材图片有需要再补充）。
 
 ## 二、PPT 结构与编号约定
 
